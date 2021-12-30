@@ -15,13 +15,14 @@ namespace keys_collector.Services
 
 		public async Task<SearchCodeResult> GetPage(string keyword, int page, string language, int perPage = 100)
 		{
-			var searchRequest = new SearchCodeRequest(keyword);
-
-			searchRequest.SortField = CodeSearchSort.Indexed;
-			searchRequest.Language = Enum.Parse<Language>(language);
-			searchRequest.Page = page;
-			searchRequest.PerPage = perPage;
-			var res = await client.Search.SearchCode(searchRequest);
+            var searchRequest = new SearchCodeRequest(keyword)
+            {
+                SortField = CodeSearchSort.Indexed,
+                Language = Enum.Parse<Language>(language),
+                Page = page,
+                PerPage = perPage
+            };
+            var res = await client.Search.SearchCode(searchRequest);
 			return res;
 		}
 	}

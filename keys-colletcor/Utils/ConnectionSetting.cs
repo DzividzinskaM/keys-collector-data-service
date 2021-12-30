@@ -16,9 +16,11 @@ namespace keys_collector
 			}
 			var productInformation = new ProductHeaderValue("keysCollector");
 			var credentials = new Credentials(token);
-			var client = new GitHubClient(productInformation);
-			client.Credentials = credentials;
-			services.AddTransient<GitHubClient>(x => { return client; });
+            var client = new GitHubClient(productInformation)
+            {
+                Credentials = credentials
+            };
+            services.AddTransient(x => { return client; });
 		}
 	}
 }
