@@ -8,6 +8,6 @@ namespace keys_colletcor.Models
     public class RepositoryResult
     {
         public string Key { get; set; }
-        public List<Repository> ResultList { get; set; }
+        public List<Repo> ResultList { get; set; }
     }
 }
