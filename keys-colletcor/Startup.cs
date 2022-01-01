@@ -31,6 +31,7 @@ namespace keys_collector
 
             services.AddGithubClient();
             services.AddSingleton<GithubService>();
+            services.AddSingleton<UpdateService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -39,7 +40,7 @@ namespace keys_collector
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI();//x=>x.SwaggerEndpoint("/swagger/v1/swagger.json", "keys-collector v1")
             }
             app.UseHttpsRedirection();
 

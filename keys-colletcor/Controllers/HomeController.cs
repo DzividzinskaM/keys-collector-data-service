@@ -17,10 +17,16 @@ namespace keys_collector.Controllers
             _service = service;
         } 
 
+        //[HttpPost]
+        //public async Task<IActionResult> IndexAsync(RequestModel requestModel)
+        //{
+        //    var res = await _service.GetPage(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language);
+        //    return Ok(res);
+        //}
         [HttpPost]
-        public async Task<IActionResult> IndexAsync(RequestModel requestModel)
+        public async Task<IActionResult> GetKeyPages(RequestModel requestModel)
         {
-            var res = await _service.GetPage(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language);
+            var res = await _service.GetKeyPages(requestModel);
             return Ok(res);
         }
     }

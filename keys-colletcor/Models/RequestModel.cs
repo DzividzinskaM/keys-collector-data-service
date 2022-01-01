@@ -10,5 +10,6 @@ namespace keys_collector.Models
         public string Keyword { get; set; }
         public int PageNumbers { get; set; } = 1;
         public string Language { get; set; }
+        public int frequency = 1;
     }
 }

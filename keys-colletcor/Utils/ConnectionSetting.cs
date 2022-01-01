@@ -20,7 +20,7 @@ namespace keys_collector
             {
                 Credentials = credentials
             };
-            services.AddTransient(x => { return client; });
+            services.AddTransient(x => client);
 		}
 	}
 }
