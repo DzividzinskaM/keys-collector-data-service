@@ -57,7 +57,7 @@ namespace keys_collector.Services
                                                   DateTime.Now)));
         }
 
-        public async Task<long> GetKeyPages(RequestModel requestModel)
+        public async Task<List<IDisposable>> GetKeyPages(RequestModel requestModel)
         {
             updateService.Add(requestModel.Keyword);
 
@@ -66,10 +66,31 @@ namespace keys_collector.Services
                                 .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
             ));
 
-            Connections.Add(requestModel.Keyword, new List<IDisposable>());
-            Connections[requestModel.Keyword].Add(conn);
 
-            return await Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency)).FirstOrDefaultAsync();
+            AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
+            //Connections.Add(requestModel.Keyword, new List<IDisposable>());
+            //Connections[requestModel.Keyword].Add(conn);
+
+            //return await Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency)).FirstOrDefaultAsync();
+
+            return Connections[requestModel.Keyword];
+        }
+
+       
+        public void AddToDictionary(Dictionary<string, List<IDisposable>> dict, string key, List<IDisposable> value, IDisposable additionalvalue=null)
+        {
+            if (dict.ContainsKey(key))
+            {
+                foreach (var item in value)
+                    dict[key].Add(item);
+            }
+            else
+            {
+                dict.Add(key, value);
+            }
+
+            if (additionalvalue != null)
+                dict[key].Add(additionalvalue);
         }
 	}
 }

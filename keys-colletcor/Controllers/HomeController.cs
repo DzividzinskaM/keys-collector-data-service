@@ -27,7 +27,7 @@ namespace keys_collector.Controllers
         public async Task<IActionResult> GetKeyPages(RequestModel requestModel)
         {
             var res = await _service.GetKeyPages(requestModel);
-            return Ok(res);
+            return Ok(res[0]);
         }
     }
 }
