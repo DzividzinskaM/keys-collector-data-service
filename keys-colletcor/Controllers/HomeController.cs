@@ -15,19 +15,27 @@ namespace keys_collector.Controllers
         public HomeController(GithubService service)
         {
             _service = service;
-        } 
+        }
 
         //[HttpPost]
         //public async Task<IActionResult> IndexAsync(RequestModel requestModel)
         //{
         //    var res = await _service.GetPage(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language);
-        //    return Ok(res);
+        //    if (res != default)
+        //    {
+        //        return Ok(res);
+        //    }
+        //    return BadRequest("Non-existent language entered. Choose another one.");
         //}
         [HttpPost]
         public async Task<IActionResult> GetKeyPages(RequestModel requestModel)
         {
             var res = await _service.GetKeyPages(requestModel);
-            return Ok(res[0]);
+            if (res != default)
+            {
+                return Ok(res[0]);
+            }
+            return BadRequest("Non-existent language entered. Choose another one.");
         }
     }
 }
