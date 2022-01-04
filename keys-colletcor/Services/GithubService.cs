@@ -84,6 +84,10 @@ namespace keys_collector.Services
                 ));
 
                 AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
+                Connections[requestModel.Keyword].Add(
+                    updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
+                    );
+
             }
             catch(Exception){
 
@@ -99,6 +103,11 @@ namespace keys_collector.Services
             //return updateService.Repos[requestModel.Keyword].ToList();
         }
 
+        public List<Repo> GetRecentRepos(string keyword, List<Repo> list)
+        {
+            // here could be logging or creating RepositoryResult models
+            return updateService.GetDistinctRepos(keyword, list);
+        }
        
         public void AddToDictionary(Dictionary<string, List<IDisposable>> dict, string key, List<IDisposable> value, IDisposable additionalvalue=null)
         {

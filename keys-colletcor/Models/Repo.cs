@@ -17,5 +17,19 @@ namespace keys_collector.Models
         {
             Name = name; Url = url; CoincidenceIndex = index; LanguageName = language; Date = date;
         }
+
+        public override bool Equals(object obj)
+        {
+            if ((obj == null) || !GetType().Equals(obj.GetType()))
+            {
+                return false;
+            }
+            else
+            {
+                Repo r = (Repo)obj;
+                return (Name == r.Name) && (Url == r.Url) && (LanguageName == r.LanguageName)
+                    && (CoincidenceIndex == r.CoincidenceIndex) && (Date == r.Date);
+            }
+        }
     }
 }
