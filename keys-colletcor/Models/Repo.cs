@@ -31,5 +31,10 @@ namespace keys_collector.Models
                     && (CoincidenceIndex == r.CoincidenceIndex) && (Date == r.Date);
             }
         }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Name, Url, LanguageName, CoincidenceIndex);
+        }
     }
 }

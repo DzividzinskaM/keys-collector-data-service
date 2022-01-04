@@ -28,14 +28,15 @@ namespace keys_collector.Controllers
         //    return BadRequest("Non-existent language entered. Choose another one.");
         //}
         [HttpPost]
-        public async Task<IActionResult> GetKeyPages(RequestModel requestModel)
+        public IActionResult EstablishConnections(RequestModel requestModel)
         {
-            var res = await _service.GetKeyPages(requestModel);
-            if (res != default)
-            {
-                return Ok(res[0]);
-            }
-            return BadRequest("Non-existent language entered. Choose another one.");
+            _service.EstablishConnections(requestModel);
+            return Ok();
+        }
+        [HttpGet]
+        public IActionResult GetNewRepositoryResultLogs()
+        {
+            return Ok(_service.NewRepositoryResultsLogger);
         }
     }
 }

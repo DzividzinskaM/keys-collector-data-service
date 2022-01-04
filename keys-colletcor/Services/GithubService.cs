@@ -12,7 +12,8 @@ namespace keys_collector.Services
 	{
 		private readonly GitHubClient client;
         private readonly UpdateService updateService;
-        private Dictionary<string, List<IDisposable>> Connections;
+        private readonly Dictionary<string, List<IDisposable>> Connections;
+        public readonly List<RepositoryResult> NewRepositoryResultsLogger;
 
         public GithubService(GitHubClient client, UpdateService updateService)
 		{
@@ -20,7 +21,7 @@ namespace keys_collector.Services
             //updateService = new UpdateService();
             this.updateService = updateService;
             Connections = new Dictionary<string, List<IDisposable>>();
-
+            NewRepositoryResultsLogger = new List<RepositoryResult>();
         }
 
 		public async Task<SearchCodeResult> GetPage(string keyword, int page, string language, int perPage = 100)
@@ -72,7 +73,7 @@ namespace keys_collector.Services
             }
         }
 
-        public async Task<List<IDisposable>> GetKeyPages(RequestModel requestModel)
+        public void EstablishConnections(RequestModel requestModel)
         {
             updateService.Add(requestModel.Keyword);
 
@@ -83,29 +84,22 @@ namespace keys_collector.Services
                                     .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
                 ));
 
+                //Connections.Add(requestModel.Keyword, new List<IDisposable>());
+                //Connections[requestModel.Keyword].Add(conn);
                 AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
                 Connections[requestModel.Keyword].Add(
                     updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
                     );
 
             }
-            catch(Exception){
-
-                return default;
-            }
-
-            //Connections.Add(requestModel.Keyword, new List<IDisposable>());
-            //Connections[requestModel.Keyword].Add(conn);
-
+            catch (Exception) { }
             //return await Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency)).FirstOrDefaultAsync();
 
-            return Connections[requestModel.Keyword];
-            //return updateService.Repos[requestModel.Keyword].ToList();
         }
 
         public List<Repo> GetRecentRepos(string keyword, List<Repo> list)
         {
-            // here could be logging or creating RepositoryResult models
+            NewRepositoryResultsLogger.Add(new RepositoryResult(keyword, list));
             return updateService.GetDistinctRepos(keyword, list);
         }
        
