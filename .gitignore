@@ -349,3 +349,6 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 keys-colletcor/token.txt
+
+# Visual Studio Code
+.vscode
