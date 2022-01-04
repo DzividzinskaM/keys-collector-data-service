@@ -12,7 +12,8 @@ namespace keys_collector.Services
 	{
 		private readonly GitHubClient client;
         private readonly UpdateService updateService;
-        private Dictionary<string, List<IDisposable>> Connections;
+        private readonly Dictionary<string, List<IDisposable>> Connections;
+        public readonly List<RepositoryResult> NewRepositoryResultsLogger;
 
         public GithubService(GitHubClient client, UpdateService updateService)
 		{
@@ -20,20 +21,27 @@ namespace keys_collector.Services
             //updateService = new UpdateService();
             this.updateService = updateService;
             Connections = new Dictionary<string, List<IDisposable>>();
-
+            NewRepositoryResultsLogger = new List<RepositoryResult>();
         }
 
 		public async Task<SearchCodeResult> GetPage(string keyword, int page, string language, int perPage = 100)
 		{
-            var searchRequest = new SearchCodeRequest(keyword)
+            try
             {
-                SortField = CodeSearchSort.Indexed,
-                Language = Enum.Parse<Octokit.Language>(language),
-                Page = page,
-                PerPage = perPage
-            };
-            var res = await client.Search.SearchCode(searchRequest);
-			return res;
+                var searchRequest = new SearchCodeRequest(keyword)
+                {
+                    SortField = CodeSearchSort.Indexed,
+                    Language = Enum.Parse<Octokit.Language>(language),
+                    Page = page,
+                    PerPage = perPage
+                };
+                var res = await client.Search.SearchCode(searchRequest);
+                return res;
+            }
+            catch (Exception)
+            {
+                return default;
+            }
 		}
 
 		public IObservable<IEnumerable<Repo>> ObservedRepos(string keyword, int pagesCount, string language, int perPage = 100)
@@ -45,31 +53,70 @@ namespace keys_collector.Services
                 pages[i - 1] = Observable.FromAsync(functionAsync);
             }
 
+            var notNullPagesCount = pages.Where(x => x != null).Count();
             var modelLanguage = string.Empty;
 
-			return Observable.Merge(pages).Take(pagesCount).Buffer(pagesCount)
-                .Select(x => x.SelectMany(x => x.Items))
-                .Select(x=>x.GroupBy(x => x.Repository.Id, (x) => (x.Repository, x.Name))
-                            .Select(x => new Repo(x.FirstOrDefault().Repository.Name, 
-                                                  x.FirstOrDefault().Repository.Url, 
-                                                  x.Count(),
-                                                  x.FirstOrDefault().Name.Split('.')[1] == null ? modelLanguage : x.FirstOrDefault().Name.Split('.')[1],
-                                                  DateTime.Now)));
+            try
+            {
+                return Observable.Merge(pages).Take(notNullPagesCount).Buffer(notNullPagesCount)//.Take(pagesCount).Buffer(pagesCount)
+                .Select(x => x.SelectMany(x => x == null ? default : x.Items))
+                .Select(x => x.GroupBy(x => x.Repository.Id, (x) => (x.Repository, x.Name))
+                            .Select(x => new Repo(x.FirstOrDefault().Repository.Name,
+                                                    x.FirstOrDefault().Repository.Url,
+                                                    x.Count(),
+                                                    x.FirstOrDefault().Name.Split('.')[1] ?? modelLanguage,
+                                                    DateTime.Now)));
+            }
+            catch (Exception)
+            {
+                return default;
+            }
         }
 
-        public async Task<long> GetKeyPages(RequestModel requestModel)
+        public void EstablishConnections(RequestModel requestModel)
         {
             updateService.Add(requestModel.Keyword);
 
-            var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
-                .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
-                                .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
-            ));
+            try
+            {
+                var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
+                    .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
+                                    .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
+                ));
 
-            Connections.Add(requestModel.Keyword, new List<IDisposable>());
-            Connections[requestModel.Keyword].Add(conn);
+                //Connections.Add(requestModel.Keyword, new List<IDisposable>());
+                //Connections[requestModel.Keyword].Add(conn);
+                AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
+                Connections[requestModel.Keyword].Add(
+                    updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
+                    );
 
-            return await Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency)).FirstOrDefaultAsync();
+            }
+            catch (Exception) { }
+            //return await Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency)).FirstOrDefaultAsync();
+
+        }
+
+        public List<Repo> GetRecentRepos(string keyword, List<Repo> list)
+        {
+            NewRepositoryResultsLogger.Add(new RepositoryResult(keyword, list));
+            return updateService.GetDistinctRepos(keyword, list);
+        }
+       
+        public void AddToDictionary(Dictionary<string, List<IDisposable>> dict, string key, List<IDisposable> value, IDisposable additionalvalue=null)
+        {
+            if (dict.ContainsKey(key))
+            {
+                foreach (var item in value)
+                    dict[key].Add(item);
+            }
+            else
+            {
+                dict.Add(key, value);
+            }
+
+            if (additionalvalue != null)
+                dict[key].Add(additionalvalue);
         }
 	}
 }
