@@ -45,20 +45,11 @@ namespace keys_collector.Controllers
             }
         }
 
-        // ------SIMPLE EXAMPLE REQUEST 
-        // -------------------DELETE IT LATER
-        [HttpPost]
-        public async Task<IActionResult> SetToken(RequestModel requestModel)
-        {
-            var header = Request.Headers.FirstOrDefault(h => h.Key.Equals("Authorization"));
-            var res = await _service.GetPage(header.Value, requestModel.Keyword, requestModel.PageNumbers, requestModel.Language);
-            return Ok(res);
-        }
-
         [HttpPost]
         public async Task<IActionResult> IndexAsync(RequestModel requestModel)
         {
-            var res = await _service.GetPage(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language);
+            var header = Request.Headers.FirstOrDefault(h => h.Key.Equals("Authorization"));
+            var res = await _service.GetPage(header.Value, requestModel.Keyword, requestModel.PageNumbers, requestModel.Language);
             if (res != default)
             {
                 return Ok(res);
