@@ -74,13 +74,13 @@ namespace keys_collector.Services
                 pages[i - 1] = Observable.FromAsync(functionAsync);
             }
 
-            var notNullPagesCount = pages.Where(x => x != null).Count();
+            //var notNullPagesCount = pages.Where(x => x != null).Count();
             var modelLanguage = string.Empty;
 
             try
             {
-                return Observable.Merge(pages).Take(notNullPagesCount).Buffer(notNullPagesCount)//.Take(pagesCount).Buffer(pagesCount)
-                .Select(x => x.SelectMany(x => x == null ? default : x.Items))
+                return Observable.Merge(pages).Take(pagesCount).Buffer(pagesCount) //.Take(notNullPagesCount).Buffer(notNullPagesCount)//
+                .Select(x => x.SelectMany(x => x == null ? new List<SearchCode>() : x.Items))//x == null ? default :
                 .Select(x => x.GroupBy(x => x.Repository.Id, (x) => (x.Repository, x.Name))
                             .Select(x => new Repo(x.FirstOrDefault().Repository.Name,
                                                     x.FirstOrDefault().Repository.Url,
@@ -94,16 +94,28 @@ namespace keys_collector.Services
             }
         }
 
-        public void EstablishConnections(RequestModel requestModel)
+        public void EstablishConnections(string token, RequestModel requestModel)
         {
+            if (client == null)
+            {
+                this.token = token;
+                InitializeClient();
+            }
             updateService.Add(requestModel.Keyword);
 
             try
             {
                 var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
-                    .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
-                                    .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
-                ));
+                   .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
+                                   .Subscribe(x => {
+                                       try
+                                       {
+                                           if (x != null)
+                                               updateService.Notify(requestModel.Keyword, x.ToList());
+                                       }
+                                       catch (Exception) { }
+                                   } //.OrderByDescending(x => x.CoincidenceIndex)
+               ));
 
                 //Connections.Add(requestModel.Keyword, new List<IDisposable>());
                 //Connections[requestModel.Keyword].Add(conn);
