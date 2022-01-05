@@ -4,28 +4,38 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using keys_collector.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Octokit;
 
 namespace keys_collector.Services
 {
 	public class GithubService
 	{
-		private readonly GitHubClient client;
+		private GitHubClient client;
         private readonly UpdateService updateService;
         private readonly Dictionary<string, List<IDisposable>> Connections;
         public readonly List<RepositoryResult> NewRepositoryResultsLogger;
+        private string token;
 
-        public GithubService(GitHubClient client, UpdateService updateService)
+        public GithubService(UpdateService updateService)
 		{
-			this.client = client;
-            //updateService = new UpdateService();
+            //this.client = client;
+            updateService = new UpdateService();
             this.updateService = updateService;
             Connections = new Dictionary<string, List<IDisposable>>();
             NewRepositoryResultsLogger = new List<RepositoryResult>();
         }
 
-		public async Task<SearchCodeResult> GetPage(string keyword, int page, string language, int perPage = 100)
+
+        public async Task<SearchCodeResult> GetPage(string token, string keyword, int page, string language, int perPage = 100)
 		{
+           
+            if (client == null)
+            {
+                this.token = token;
+                InitializeClient();
+            }
+          
             try
             {
                 var searchRequest = new SearchCodeRequest(keyword)
@@ -44,23 +54,33 @@ namespace keys_collector.Services
             }
 		}
 
-		public IObservable<IEnumerable<Repo>> ObservedRepos(string keyword, int pagesCount, string language, int perPage = 100)
+        private void InitializeClient()
+        {
+
+            var productInformation = new ProductHeaderValue("keysCollector");
+            var credentials = new Credentials(this.token);
+            client = new GitHubClient(productInformation)
+            {
+                Credentials = credentials
+            };
+        }
+
+        public IObservable<IEnumerable<Repo>> ObservedRepos(string keyword, int pagesCount, string language, int perPage = 100)
         {
 			var pages = new IObservable<SearchCodeResult>[pagesCount];
             for (int i = 1; i <= pagesCount; i++)
             {
-                async Task<SearchCodeResult> functionAsync() => await GetPage(keyword, pagesCount, language, perPage);
+                async Task<SearchCodeResult> functionAsync() => await GetPage(this.token, keyword, pagesCount, language, perPage);
                 pages[i - 1] = Observable.FromAsync(functionAsync);
             }
 
-            var notNullPagesCount = pages.Where(x => x != null).Count();
+            //var notNullPagesCount = pages.Where(x => x != null).Count();
             var modelLanguage = string.Empty;
 
             try
             {
-                return Observable.Merge(pages).Take(pagesCount).Buffer(pagesCount)
-                .Where(x => x != null)
-                .Select(x => x.SelectMany(x => x.Items))
+                return Observable.Merge(pages).Take(pagesCount).Buffer(pagesCount) //.Take(notNullPagesCount).Buffer(notNullPagesCount)//
+                .Select(x => x.SelectMany(x => x == null ? new List<SearchCode>() : x.Items))//x == null ? default :
                 .Select(x => x.GroupBy(x => x.Repository.Id, (x) => (x.Repository, x.Name))
                             .Select(x => new Repo(x.FirstOrDefault().Repository.Name,
                                                     x.FirstOrDefault().Repository.Url,
@@ -74,27 +94,28 @@ namespace keys_collector.Services
             }
         }
 
-        public void EstablishConnections(RequestModel requestModel)
+        public void EstablishConnections(string token, RequestModel requestModel)
         {
+            if (client == null)
+            {
+                this.token = token;
+                InitializeClient();
+            }
             updateService.Add(requestModel.Keyword);
 
             try
             {
-                /*var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
-                    .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
-                                    .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
-                ));*/
-
                 var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
-                    .SelectMany(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language))
-                    .Subscribe(x => 
-                    {
-                        if(x != null) {
-                            updateService.Notify(requestModel.Keyword, x.ToList());
-                        } else {
-
-                        }
-                    });
+                   .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
+                                   .Subscribe(x => {
+                                       try
+                                       {
+                                           if (x != null)
+                                               updateService.Notify(requestModel.Keyword, x.ToList());
+                                       }
+                                       catch (Exception) { }
+                                   } //.OrderByDescending(x => x.CoincidenceIndex)
+               ));
 
                 //Connections.Add(requestModel.Keyword, new List<IDisposable>());
                 //Connections[requestModel.Keyword].Add(conn);
