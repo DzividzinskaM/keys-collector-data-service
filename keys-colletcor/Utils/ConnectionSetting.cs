@@ -15,7 +15,7 @@ namespace keys_collector
 				token = reader.ReadLine();
 			}
 			var productInformation = new ProductHeaderValue("keysCollector");
-			var credentials = new Credentials(token);
+            var credentials = new Credentials(token);
             var client = new GitHubClient(productInformation)
             {
                 Credentials = credentials

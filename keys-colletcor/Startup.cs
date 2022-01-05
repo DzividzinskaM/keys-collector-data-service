@@ -12,6 +12,7 @@ namespace keys_collector
 {
     public class Startup
     {
+        readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -27,9 +28,18 @@ namespace keys_collector
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Keys collector", Version = "v1" });
             });
 
-            services.AddHttpClient<HomeController>(c => c.BaseAddress = new System.Uri("https://api.github.com"));
+            //services.AddHttpClient<HomeController>(c => c.BaseAddress = new System.Uri("https://api.github.com"));
 
-            services.AddGithubClient();
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: MyAllowSpecificOrigins,
+                                  builder => builder.WithOrigins("http://localhost:3000")
+                                             .WithMethods("POST", "GET", "PUT", "DELETE")
+                                             .WithHeaders("*")
+                                  );
+            });
+
+            //services.AddGithubClient();
             services.AddSingleton<GithubService>();
             services.AddSingleton<UpdateService>();
         }
@@ -45,6 +55,7 @@ namespace keys_collector
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors(MyAllowSpecificOrigins);
 
             app.UseAuthorization();
 
