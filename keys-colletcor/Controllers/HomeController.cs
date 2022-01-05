@@ -56,16 +56,16 @@ namespace keys_collector.Controllers
             }
             return BadRequest("Non-existent language entered. Choose another one.");
         }
-        [HttpPost]
+        [HttpPost("connect")]
         public IActionResult EstablishConnections(RequestModel requestModel)
         {
             _service.EstablishConnections(requestModel);
             return Ok();
         }
-        [HttpGet]
+        [HttpGet("getNewReposLogs")]
         public IActionResult GetNewRepositoryResultLogs()
         {
-            return Ok(_service.NewRepositoryResultsLogger);
+            return Ok(Newtonsoft.Json.JsonConvert.SerializeObject(_service.NewRepositoryResultsLogger));
         }
     }
 }
