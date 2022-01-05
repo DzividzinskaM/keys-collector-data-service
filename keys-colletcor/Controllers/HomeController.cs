@@ -59,7 +59,9 @@ namespace keys_collector.Controllers
         [HttpPost("connect")]
         public IActionResult EstablishConnections(RequestModel requestModel)
         {
-            _service.EstablishConnections(requestModel);
+            var header = Request.Headers.FirstOrDefault(h => h.Key.Equals("Authorization"));
+            _service.EstablishConnections(header.Value, requestModel);
+            Response.Headers.Add("Content-Type", "text/event-stream");
             return Ok();
         }
         [HttpGet("getNewReposLogs")]

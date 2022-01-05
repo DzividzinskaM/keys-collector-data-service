@@ -94,8 +94,13 @@ namespace keys_collector.Services
             }
         }
 
-        public void EstablishConnections(RequestModel requestModel)
+        public void EstablishConnections(string token, RequestModel requestModel)
         {
+            if (client == null)
+            {
+                this.token = token;
+                InitializeClient();
+            }
             updateService.Add(requestModel.Keyword);
 
             try
