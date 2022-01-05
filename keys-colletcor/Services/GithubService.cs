@@ -79,17 +79,22 @@ namespace keys_collector.Services
 
             try
             {
-                var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
+                /*var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
                     .Subscribe(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language)
                                     .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList()) //.OrderByDescending(x => x.CoincidenceIndex)
-                ));
+                ));*/
+
+                var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
+                    .SelectMany(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language))
+                    .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList())
+                );
 
                 //Connections.Add(requestModel.Keyword, new List<IDisposable>());
                 //Connections[requestModel.Keyword].Add(conn);
                 AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
                 Connections[requestModel.Keyword].Add(
                     updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
-                    );
+                );
 
             }
             catch (Exception) { }
