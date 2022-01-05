@@ -4,28 +4,38 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using keys_collector.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Octokit;
 
 namespace keys_collector.Services
 {
 	public class GithubService
 	{
-		private readonly GitHubClient client;
+		private GitHubClient client;
         private readonly UpdateService updateService;
         private readonly Dictionary<string, List<IDisposable>> Connections;
         public readonly List<RepositoryResult> NewRepositoryResultsLogger;
+        private string token;
 
-        public GithubService(GitHubClient client, UpdateService updateService)
+        public GithubService(UpdateService updateService)
 		{
-			this.client = client;
-            //updateService = new UpdateService();
+            //this.client = client;
+            updateService = new UpdateService();
             this.updateService = updateService;
             Connections = new Dictionary<string, List<IDisposable>>();
             NewRepositoryResultsLogger = new List<RepositoryResult>();
         }
 
-		public async Task<SearchCodeResult> GetPage(string keyword, int page, string language, int perPage = 100)
+
+        public async Task<SearchCodeResult> GetPage(string token, string keyword, int page, string language, int perPage = 100)
 		{
+           
+            if (client == null)
+            {
+                this.token = token;
+                InitializeClient();
+            }
+          
             try
             {
                 var searchRequest = new SearchCodeRequest(keyword)
@@ -44,12 +54,23 @@ namespace keys_collector.Services
             }
 		}
 
-		public IObservable<IEnumerable<Repo>> ObservedRepos(string keyword, int pagesCount, string language, int perPage = 100)
+        private void InitializeClient()
+        {
+
+            var productInformation = new ProductHeaderValue("keysCollector");
+            var credentials = new Credentials(this.token);
+            client = new GitHubClient(productInformation)
+            {
+                Credentials = credentials
+            };
+        }
+
+        public IObservable<IEnumerable<Repo>> ObservedRepos(string keyword, int pagesCount, string language, int perPage = 100)
         {
 			var pages = new IObservable<SearchCodeResult>[pagesCount];
             for (int i = 1; i <= pagesCount; i++)
             {
-                async Task<SearchCodeResult> functionAsync() => await GetPage(keyword, pagesCount, language, perPage);
+                async Task<SearchCodeResult> functionAsync() => await GetPage(this.token, keyword, pagesCount, language, perPage);
                 pages[i - 1] = Observable.FromAsync(functionAsync);
             }
 
