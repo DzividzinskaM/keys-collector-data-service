@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
 using keys_collector.Models;
 using keys_collector.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -34,9 +37,20 @@ namespace keys_collector.Controllers
             return Ok();
         }
         [HttpGet]
-        public IActionResult GetNewRepositoryResultLogs()
+        async public Task GetNewRepositoryResultLogs()
         {
-            return Ok(_service.NewRepositoryResultsLogger);
+            List<RepositoryResult> data = _service.NewRepositoryResultsLogger;
+
+            Response.Headers.Add("Content-Type", "text/event-stream");
+
+            for (int i = 0; i < data.Count; i++)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                string dataItem = $"data: {data[i]}\n\n";
+                byte[] dataItemBytes = ASCIIEncoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
+                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+                await Response.Body.FlushAsync();
+            }
         }
     }
 }

@@ -58,8 +58,9 @@ namespace keys_collector.Services
 
             try
             {
-                return Observable.Merge(pages).Take(notNullPagesCount).Buffer(notNullPagesCount)//.Take(pagesCount).Buffer(pagesCount)
-                .Select(x => x.SelectMany(x => x == null ? default : x.Items))
+                return Observable.Merge(pages).Take(pagesCount).Buffer(pagesCount)
+                .Where(x => x != null)
+                .Select(x => x.SelectMany(x => x.Items))
                 .Select(x => x.GroupBy(x => x.Repository.Id, (x) => (x.Repository, x.Name))
                             .Select(x => new Repo(x.FirstOrDefault().Repository.Name,
                                                     x.FirstOrDefault().Repository.Url,
@@ -86,8 +87,14 @@ namespace keys_collector.Services
 
                 var conn = Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency))
                     .SelectMany(x => ObservedRepos(requestModel.Keyword, requestModel.PageNumbers, requestModel.Language))
-                    .Subscribe(x => updateService.Notify(requestModel.Keyword, x.ToList())
-                );
+                    .Subscribe(x => 
+                    {
+                        if(x != null) {
+                            updateService.Notify(requestModel.Keyword, x.ToList());
+                        } else {
+
+                        }
+                    });
 
                 //Connections.Add(requestModel.Keyword, new List<IDisposable>());
                 //Connections[requestModel.Keyword].Add(conn);
