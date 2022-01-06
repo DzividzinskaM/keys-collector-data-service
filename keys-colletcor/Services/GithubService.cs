@@ -16,6 +16,7 @@ namespace keys_collector.Services
         private readonly Dictionary<string, List<IDisposable>> Connections;
         public readonly List<RepositoryResult> NewRepositoryResultsLogger;
         public readonly List<LanguageResult> RecentLanguages;
+        public List<Repo> Last10Repos { get; private set; }
         private string token;
 
         public GithubService(UpdateService updateService)
@@ -26,6 +27,7 @@ namespace keys_collector.Services
             Connections = new Dictionary<string, List<IDisposable>>();
             NewRepositoryResultsLogger = new List<RepositoryResult>();
             RecentLanguages = new List<LanguageResult>();
+            Last10Repos = new List<Repo>();
         }
 
 
@@ -113,7 +115,7 @@ namespace keys_collector.Services
                                        try
                                        {
                                            if (x != null)
-                                               updateService.Notify(requestModel.Keyword, x.ToList());
+                                               updateService.NotifyRepos(requestModel.Keyword, x.ToList());
                                        }
                                        catch (Exception) { }
                                    } 
@@ -125,6 +127,9 @@ namespace keys_collector.Services
                 );
                 Connections[requestModel.Keyword].Add(
                     updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentLanguagesUsed(requestModel.Keyword))
+                );
+                Connections[requestModel.Keyword].Add(
+                    updateService.Repos[requestModel.Keyword].Subscribe(async (x)=> await GetLast10Repos(requestModel.Keyword, x))
                 );
 
             }
@@ -142,10 +147,37 @@ namespace keys_collector.Services
             }
             else
             {
+                if(list.Count<1) return updateService.GetDistinctRepos(keyword, list);
                 NewRepositoryResultsLogger.Add(new RepositoryResult(keyword, list));
             }
 
             return updateService.GetDistinctRepos(keyword, list);
+        }
+
+        public async Task<IEnumerable<Repo>> GetLast10Repos(string keyword, List<Repo> list)
+        {
+            if (updateService.Last10Repos.ContainsKey(keyword))
+            {
+                var first = await updateService.Last10Repos[keyword].FirstOrDefaultAsync();
+                var last = first.Concat(list).OrderByDescending(x=>x.Date).Take(10).ToList();
+
+                if (first.Count != last.Count()
+                    ||
+                    Enumerable.SequenceEqual(first.OrderBy(e => e), last.OrderBy(e => e)))
+                {
+                    updateService.NotifyLast10(keyword, last);
+                    Last10Repos = last;
+                    return last;
+                }
+            }
+            else
+            {
+                var res = list.Take(10).ToList();
+                updateService.NotifyLast10(keyword, res);
+                Last10Repos = res;
+                return res;
+            }
+            return default;
         }
        
         public void AddToDictionary(Dictionary<string, List<IDisposable>> dict, string key, List<IDisposable> value, IDisposable additionalvalue=null)
@@ -184,5 +216,7 @@ namespace keys_collector.Services
 
             return res;
         }
+
+
 	}
 }

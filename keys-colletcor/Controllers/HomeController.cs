@@ -69,14 +69,14 @@ namespace keys_collector.Controllers
        [HttpGet]
         async public Task GetNewRepositoryResultLogs()
         {
-            var data = _service.NewRepositoryResultsLogger.OrderByDescending(x=>x.Key).Take(10).ToList();
+            var data = _service.NewRepositoryResultsLogger; //.OrderByDescending(x=>x.Key).Take(10).ToList();
 
             Response.Headers.Add("Content-Type", "text/event-stream");
 
             for (int i = 0; i < data.Count; i++)
             {
-                await Task.Delay(TimeSpan.FromSeconds(3));
-                string dataItem = data[i].ResultList.Count.ToString();
+                await Task.Delay(TimeSpan.FromMilliseconds(300));
+                var dataItem = data[i].ResultList.Count.ToString();
                 byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
                 await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
                 await Response.Body.FlushAsync();
@@ -87,6 +87,23 @@ namespace keys_collector.Controllers
         async public Task GetRecentLanguagesUsed()
         {
             var data = _service.RecentLanguages;
+
+            Response.Headers.Add("Content-Type", "text/event-stream");
+
+            for (int i = 0; i < data.Count; i++)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(300));
+                var dataItem = data[i];
+                byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
+                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+                await Response.Body.FlushAsync();
+            }
+        }
+
+        [HttpGet("last10")]
+        async public Task GetLast10Repos()
+        {
+            var data = _service.Last10Repos;
 
             Response.Headers.Add("Content-Type", "text/event-stream");
 

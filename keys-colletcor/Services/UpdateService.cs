@@ -11,17 +11,26 @@ namespace keys_collector.Services
     public class UpdateService
     {
         public Dictionary<string, Subject<List<Repo>>> Repos = new Dictionary<string, Subject<List<Repo>>>();
+        public Dictionary<string, BehaviorSubject<List<Repo>>> Last10Repos = new Dictionary<string, BehaviorSubject<List<Repo>>>();
 
         public Dictionary<string, List<Repo>> Current = new Dictionary<string, List<Repo>>();
         public void Add(string key)
         {
             if (!Repos.ContainsKey(key))
                 Repos.Add(key, new Subject<List<Repo>>());
+
+            if (!Last10Repos.ContainsKey(key))
+                Last10Repos.Add(key, new BehaviorSubject<List<Repo>>(new List<Repo>()));
         }
 
-        public void Notify(string key, List<Repo> search)
+        public void NotifyRepos(string key, List<Repo> search)
         {
             Repos[key].OnNext(search);
+        }
+
+        public void NotifyLast10(string key, List<Repo> search)
+        {
+            Last10Repos[key].OnNext(search);
         }
 
         public List<Repo> GetDistinctRepos(string keyword, List<Repo> repos)
