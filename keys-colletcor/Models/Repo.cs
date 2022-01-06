@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace keys_collector.Models
 {
-    public class Repo
+    public class Repo:IComparable
     {
         public string Name { get; set; }
         public string Url { get; set; }
@@ -35,6 +35,22 @@ namespace keys_collector.Models
         public override int GetHashCode()
         {
             return HashCode.Combine(Name, Url, LanguageName, CoincidenceIndex);
+        }
+
+        public int CompareTo(object obj)
+        {
+            if (string.Compare(Name,((Repo)obj).Name)>0)
+            {
+                return 1;
+            }
+            else if (string.Compare(Name, ((Repo)obj).Name) < 0)
+            {
+                return -1;
+            }
+            else
+            {
+                return 0;
+            }
         }
     }
 }
