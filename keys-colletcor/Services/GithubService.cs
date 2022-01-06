@@ -15,6 +15,7 @@ namespace keys_collector.Services
         private readonly UpdateService updateService;
         private readonly Dictionary<string, List<IDisposable>> Connections;
         public readonly List<RepositoryResult> NewRepositoryResultsLogger;
+        public readonly List<LanguageResult> RecentLanguages;
         private string token;
 
         public GithubService(UpdateService updateService)
@@ -150,6 +151,19 @@ namespace keys_collector.Services
 
             if (additionalvalue != null)
                 dict[key].Add(additionalvalue);
+        }
+
+        public List<Models.Language> GetRecentLanguagesUsed(string keyword)
+        {
+            var res = updateService.Current[keyword].Where(x => x.Date > DateTime.Today.AddDays(-3))
+                .GroupBy(x => x.LanguageName)
+                .Select(x => new Models.Language(x.Key, x.Sum(sel => sel.CoincidenceIndex)))
+                .OrderBy(x => x.CoincidenceIndex)
+                .ToList();
+
+            RecentLanguages.Add(new LanguageResult(keyword,res));
+
+            return res;
         }
 	}
 }

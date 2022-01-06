@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,26 +25,26 @@ namespace keys_collector.Controllers
 
         //  ------------SIMPLE EXAMPLE OF EVENT REQUEST
         // ----------DELETE IT LATER
-        [HttpGet]
-        public async Task Get()
-        {
-            string[] data = new string[] {
-                "Hello World!",
-                "Hello Galaxy!",
-                "Hello Universe!"
-            };
+        //[HttpGet]
+        //public async Task Get()
+        //{
+        //    string[] data = new string[] {
+        //        "Hello World!",
+        //        "Hello Galaxy!",
+        //        "Hello Universe!"
+        //    };
 
-            Response.Headers.Add("Content-Type", "text/event-stream");
+        //    Response.Headers.Add("Content-Type", "text/event-stream");
 
-            for (int i = 0; i < data.Length; i++)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5));
-                string dataItem = $"data: {data[i]}\n\n";
-                byte[] dataItemBytes = ASCIIEncoding.ASCII.GetBytes(dataItem);
-                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
-                await Response.Body.FlushAsync();
-            }
-        }
+        //    for (int i = 0; i < data.Length; i++)
+        //    {
+        //        await Task.Delay(TimeSpan.FromSeconds(5));
+        //        string dataItem = $"data: {data[i]}\n\n";
+        //        byte[] dataItemBytes = ASCIIEncoding.ASCII.GetBytes(dataItem);
+        //        await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+        //        await Response.Body.FlushAsync();
+        //    }
+        //}
 
         [HttpPost]
         public async Task<IActionResult> IndexAsync(RequestModel requestModel)
@@ -64,10 +65,39 @@ namespace keys_collector.Controllers
             Response.Headers.Add("Content-Type", "text/event-stream");
             return Ok();
         }
-        [HttpGet("getNewReposLogs")]
-        public IActionResult GetNewRepositoryResultLogs()
+
+        [HttpGet]
+        async public Task GetNewRepositoryResultLogs()
         {
-            return Ok(Newtonsoft.Json.JsonConvert.SerializeObject(_service.NewRepositoryResultsLogger));
+            List<RepositoryResult> data = _service.NewRepositoryResultsLogger;
+
+            Response.Headers.Add("Content-Type", "text/event-stream");
+
+            for (int i = 0; i < data.Count; i++)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                string dataItem = data[i].ResultList.Count.ToString();
+                byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
+                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+                await Response.Body.FlushAsync();
+            }
+        }
+
+        [HttpGet("langs")]
+        async public Task GetRecentLanguagesUsed()
+        {
+            var data = _service.RecentLanguages;
+
+            Response.Headers.Add("Content-Type", "text/event-stream");
+
+            for (int i = 0; i < data.Count; i++)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                string dataItem = data[i].ResultList.Count.ToString();
+                byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
+                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+                await Response.Body.FlushAsync();
+            }
         }
     }
 }
