@@ -75,8 +75,8 @@ namespace keys_collector.Controllers
 
             for (int i = 0; i < data.Count; i++)
             {
-                await Task.Delay(TimeSpan.FromSeconds(5));
-                string dataItem = $"data: {data[i]}\n\n";
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                string dataItem = data[i].ResultList.Count.ToString();
                 byte[] dataItemBytes = ASCIIEncoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
                 await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
                 await Response.Body.FlushAsync();
