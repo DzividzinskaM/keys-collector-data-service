@@ -124,6 +124,9 @@ namespace keys_collector.Services
                 Connections[requestModel.Keyword].Add(
                     updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
                 );
+                Connections[requestModel.Keyword].Add(
+                    updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentLanguagesUsed(requestModel.Keyword))
+                );
 
             }
             catch (Exception) { }
