@@ -123,7 +123,7 @@ namespace keys_collector.Services
                 AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
                 Connections[requestModel.Keyword].Add(
                     updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
-                    );
+                );
 
             }
             catch (Exception) { }

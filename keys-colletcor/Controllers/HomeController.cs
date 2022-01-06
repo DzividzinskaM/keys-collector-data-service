@@ -66,7 +66,7 @@ namespace keys_collector.Controllers
             return Ok();
         }
 
-        [HttpGet]
+       [HttpGet]
         async public Task GetNewRepositoryResultLogs()
         {
             List<RepositoryResult> data = _service.NewRepositoryResultsLogger;
