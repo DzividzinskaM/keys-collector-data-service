@@ -25,6 +25,7 @@ namespace keys_collector.Services
             this.updateService = updateService;
             Connections = new Dictionary<string, List<IDisposable>>();
             NewRepositoryResultsLogger = new List<RepositoryResult>();
+            RecentLanguages = new List<LanguageResult>();
         }
 
 
