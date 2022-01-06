@@ -69,7 +69,7 @@ namespace keys_collector.Controllers
        [HttpGet]
         async public Task GetNewRepositoryResultLogs()
         {
-            List<RepositoryResult> data = _service.NewRepositoryResultsLogger;
+            var data = _service.NewRepositoryResultsLogger.OrderByDescending(x=>x.Key).Take(10).ToList();
 
             Response.Headers.Add("Content-Type", "text/event-stream");
 
@@ -86,18 +86,13 @@ namespace keys_collector.Controllers
         [HttpGet("langs")]
         async public Task GetRecentLanguagesUsed()
         {
-            var data = _service.RecentLanguages;
+            var data = _service.RecentLanguages.Take(10);
 
             Response.Headers.Add("Content-Type", "text/event-stream");
 
-            for (int i = 0; i < data.Count; i++)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(3));
-                string dataItem = data[i].ResultList.Count.ToString();
-                byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
-                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
-                await Response.Body.FlushAsync();
-            }
+            byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+            await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+            await Response.Body.FlushAsync();
         }
     }
 }

@@ -116,11 +116,9 @@ namespace keys_collector.Services
                                                updateService.Notify(requestModel.Keyword, x.ToList());
                                        }
                                        catch (Exception) { }
-                                   } //.OrderByDescending(x => x.CoincidenceIndex)
+                                   } 
                ));
 
-                //Connections.Add(requestModel.Keyword, new List<IDisposable>());
-                //Connections[requestModel.Keyword].Add(conn);
                 AddToDictionary(Connections, requestModel.Keyword, new List<IDisposable>(), conn);
                 Connections[requestModel.Keyword].Add(
                     updateService.Repos[requestModel.Keyword].Subscribe(x => GetRecentRepos(requestModel.Keyword, x))
@@ -131,13 +129,22 @@ namespace keys_collector.Services
 
             }
             catch (Exception) { }
-            //return await Observable.Interval(TimeSpan.FromSeconds(requestModel.frequency)).FirstOrDefaultAsync();
 
         }
 
         public List<Repo> GetRecentRepos(string keyword, List<Repo> list)
         {
-            NewRepositoryResultsLogger.Add(new RepositoryResult(keyword, list));
+
+            int index = NewRepositoryResultsLogger.FindIndex(item => item.Key == keyword);
+            if (index >= 0)
+            {
+                NewRepositoryResultsLogger[index].ResultList = list;
+            }
+            else
+            {
+                NewRepositoryResultsLogger.Add(new RepositoryResult(keyword, list));
+            }
+
             return updateService.GetDistinctRepos(keyword, list);
         }
        
@@ -165,7 +172,15 @@ namespace keys_collector.Services
                 .OrderBy(x => x.CoincidenceIndex)
                 .ToList();
 
-            RecentLanguages.Add(new LanguageResult(keyword,res));
+            int index = RecentLanguages.FindIndex(item => item.Key == keyword);
+            if (index >= 0)
+            {
+                RecentLanguages[index].ResultList = res;
+            }
+            else
+            {
+                RecentLanguages.Add(new LanguageResult(keyword, res));
+            }
 
             return res;
         }
