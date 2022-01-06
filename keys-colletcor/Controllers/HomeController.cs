@@ -86,13 +86,18 @@ namespace keys_collector.Controllers
         [HttpGet("langs")]
         async public Task GetRecentLanguagesUsed()
         {
-            var data = _service.RecentLanguages.Take(10);
+            var data = _service.RecentLanguages;
 
             Response.Headers.Add("Content-Type", "text/event-stream");
 
-            byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
-            await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
-            await Response.Body.FlushAsync();
+            for (int i = 0; i < data.Count; i++)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(300));
+                var dataItem = data[i];
+                byte[] dataItemBytes = Encoding.ASCII.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(dataItem));
+                await Response.Body.WriteAsync(dataItemBytes, 0, dataItemBytes.Length);
+                await Response.Body.FlushAsync();
+            }
         }
     }
 }
